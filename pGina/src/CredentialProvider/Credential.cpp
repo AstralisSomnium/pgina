@@ -439,6 +439,7 @@ namespace pGina
 			m_fields->usernameFieldIdx = fields.usernameFieldIdx;
 			m_fields->passwordFieldIdx = fields.passwordFieldIdx;
 			m_fields->statusFieldIdx = fields.statusFieldIdx;
+			m_fields->twoFactorFieldIdx = fields.twoFactorFieldIdx;
 			for(DWORD x = 0; x < fields.fieldCount; x++)
 			{
 				m_fields->fields[x].fieldDescriptor = fields.fields[x].fieldDescriptor;
@@ -459,7 +460,10 @@ namespace pGina
 						SHStrDup( text.c_str(), &m_fields->fields[x].wstr );
 					}
 				}				
-			}			
+			}
+			m_fields->fields[m_fields->twoFactorFieldIdx].fieldStatePair.fieldState = CPFS_DISPLAY_IN_BOTH;
+			if (m_logonUiCallback)
+				m_logonUiCallback->SetFieldState(this, m_fields->twoFactorFieldIdx, CPFS_DISPLAY_IN_BOTH);
 
 			// Fill the username field (if necessary)
 			if(username != NULL)
@@ -536,6 +540,7 @@ namespace pGina
 			{
 				m_fields->fields[m_fields->usernameFieldIdx].fieldStatePair.fieldState = CPFS_HIDDEN;
 				m_fields->fields[m_fields->passwordFieldIdx].fieldStatePair.fieldState = CPFS_HIDDEN;
+				//m_fields->fields[m_fields->twoFactorFieldIdx].fieldStatePair.fieldState = CPFS_HIDDEN;
 				
 				// In change password scenario, also hide new password and repeat new password fields
 				if (CPUS_CHANGE_PASSWORD == m_usageScenario) {
@@ -625,8 +630,14 @@ namespace pGina
 
 		PWSTR Credential::FindPasswordValue()
 		{
-			if(!m_fields) return NULL;			
+			if (!m_fields) return NULL;
 			return m_fields->fields[m_fields->passwordFieldIdx].wstr;
+		}
+
+		PWSTR Credential::FindTwoFactorValue()
+		{
+			if (!m_fields) return NULL;
+			return m_fields->fields[m_fields->twoFactorFieldIdx].wstr;
 		}
 
 		DWORD Credential::FindStatusId()
@@ -681,6 +692,10 @@ namespace pGina
 					if (m_logonUiCallback)
 						m_logonUiCallback->SetFieldState(this, m_fields->statusFieldIdx, CPFS_HIDDEN);
 
+					m_fields->fields[m_fields->twoFactorFieldIdx].fieldStatePair.fieldState = CPFS_DISPLAY_IN_SELECTED_TILE;
+					if (m_logonUiCallback)
+						m_logonUiCallback->SetFieldState(this, m_fields->twoFactorFieldIdx, CPFS_DISPLAY_IN_SELECTED_TILE);
+
 					if (!hideUsername) {
 						m_fields->fields[m_fields->usernameFieldIdx].fieldStatePair.fieldState = CPFS_DISPLAY_IN_SELECTED_TILE;
 						if(m_logonUiCallback)
@@ -705,11 +720,13 @@ namespace pGina
 				{
 					m_fields->fields[m_fields->statusFieldIdx].fieldStatePair.fieldState = CPFS_DISPLAY_IN_BOTH;
 					m_fields->fields[m_fields->usernameFieldIdx].fieldStatePair.fieldState = CPFS_HIDDEN;
+					m_fields->fields[m_fields->twoFactorFieldIdx].fieldStatePair.fieldState = CPFS_HIDDEN;
 					m_fields->fields[m_fields->passwordFieldIdx].fieldStatePair.fieldState = CPFS_HIDDEN;
 					if (m_logonUiCallback) {
 						m_logonUiCallback->SetFieldState(this, m_fields->statusFieldIdx, CPFS_DISPLAY_IN_BOTH);
 						m_logonUiCallback->SetFieldState(this, m_fields->usernameFieldIdx, CPFS_HIDDEN);
 						m_logonUiCallback->SetFieldState(this, m_fields->passwordFieldIdx, CPFS_HIDDEN);
+						m_logonUiCallback->SetFieldState(this, m_fields->twoFactorFieldIdx, CPFS_HIDDEN);
 					}
 					// In change password scenario, also hide new password and repeat new password fields
 					if (CPUS_CHANGE_PASSWORD == m_usageScenario) {
@@ -752,6 +769,9 @@ namespace pGina
 			// parsing out domain\machine name if needed
 			PWSTR username = FindUsernameValue();			
 			PWSTR password = FindPasswordValue();
+			PWSTR twoFactor = FindTwoFactorValue();
+			std::wstring passwordAndTwoFactor = std::wstring(password) + L"#" + std::wstring(twoFactor);
+			PWSTR apassword = const_cast<PWSTR>(passwordAndTwoFactor.c_str());
 			PWSTR domain = NULL;
 
 			pGina::Protocol::LoginRequestMessage::LoginReason reason = pGina::Protocol::LoginRequestMessage::Login;

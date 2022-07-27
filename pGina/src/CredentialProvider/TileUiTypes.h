@@ -79,6 +79,7 @@ namespace pGina
 			DWORD submitAdjacentTo;
 			DWORD usernameFieldIdx;
 			DWORD passwordFieldIdx;
+			DWORD twoFactorFieldIdx;
 			DWORD statusFieldIdx;
 			UI_FIELD fields[];	// Note: Warning 4200 - compiler cannot generate copy ctor, no doing UI_FIELDS x = UI_FIELDS y!
 		};

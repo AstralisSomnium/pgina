@@ -85,6 +85,7 @@ namespace pGina
 			void	ClearZeroAndFreeFields(CREDENTIAL_PROVIDER_FIELD_TYPE type, bool updateUi);
 			PWSTR   FindUsernameValue();
 			PWSTR   FindPasswordValue();
+			PWSTR   FindTwoFactorValue();
 			DWORD   FindStatusId();
 			void	ProcessLoginAttempt(IQueryContinueWithStatus *pqcws);
 			void    ProcessChangePasswordAttempt();
